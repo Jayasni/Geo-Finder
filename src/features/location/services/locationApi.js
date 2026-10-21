@@ -1,8 +1,41 @@
+
 const NOMINATIM_BASE_URL = (
   import.meta.env.VITE_NOMINATIM_BASE_URL ||
   "https://nominatim.openstreetmap.org"
 ).replace(/\/$/, "");
 
+async function fetchJson(url) {
+  const response = await fetch(url);
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  if (!contentType.includes("application/json")) {
+    const body = await response.text();
+    console.error("Unexpected API response:", body.slice(0, 200));
+    throw new Error("API returned HTML instead of JSON.");
+  }
+
+  return response.json();
+}
+
+// Search location by name
+export async function searchLocation(query) {
+  const params = new URLSearchParams({
+    q: query,
+    format: "jsonv2",
+    addressdetails: "1",
+    limit: "5",
+  });
+
+  return fetchJson(
+    `${NOMINATIM_BASE_URL}/search?${params}`
+  );
+}
+
+// Get address from latitude and longitude
 export async function reverseLocation(lat, lon) {
   const params = new URLSearchParams({
     lat: String(lat),
@@ -11,27 +44,7 @@ export async function reverseLocation(lat, lon) {
     addressdetails: "1",
   });
 
-  const url = `${NOMINATIM_BASE_URL}/reverse?${params}`;
-
-  console.log("Reverse geocoding URL:", url);
-
-  const response = await fetch(url);
-  const contentType = response.headers.get("content-type") || "";
-
-  console.log("Reverse geocoding status:", response.status);
-
-  if (!response.ok) {
-    throw new Error(`Reverse geocoding failed: ${response.status}`);
-  }
-
-  if (!contentType.includes("application/json")) {
-    const text = await response.text();
-    console.error("Unexpected response:", text.slice(0, 300));
-    throw new Error("Server returned HTML instead of JSON.");
-  }
-
-  const data = await response.json();
-  console.log("Address received:", data.display_name);
-
-  return data;
+  return fetchJson(
+    `${NOMINATIM_BASE_URL}/reverse?${params}`
+  );
 }
