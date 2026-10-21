@@ -4,7 +4,7 @@ import tzlookup from "@photostructure/tz-lookup";
 import {
   searchLocation,
   reverseLocation,
-} from "../services/locationApi";
+} from "../services/locationApi.js";
 
 
 function useLocationSearch() {
